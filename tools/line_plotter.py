@@ -21,6 +21,8 @@ class LinesPlotter:
         :param var_values: una lista de valores en el mismo orden que var_name_list
         :return:
         """
+        if experiment >= self.num_experiments or episode >= self.num_episodes:
+            return self
         self.data[experiment, episode, :] = np.array(var_values)
         return self
 
@@ -49,7 +51,16 @@ class LinesPlotter:
             raise Exception('Invalid var_name. ')
         return summary_pickled
 
-    def get_var_line_plot(self, var_name_list, func, window_size=10):
+    def get_var_from_data(self, var_name):
+        # Si se pasa un valor regresa unicamente ese elemento
+        if var_name in self.var_names_list:
+            index = self.var_names_list.index(var_name)
+            data_pickled = self.data[:, :, index]
+        else:
+            raise Exception('Invalid var_name. ')
+        return data_pickled
+
+    def get_var_line_plot(self, var_name_list, func, window_size=20):
         fig, ax = plt.subplots()
         self.calculate_summary(func)
         for var in var_name_list:
@@ -60,6 +71,59 @@ class LinesPlotter:
 
             ax.plot(range(self.num_episodes), data, label=var)
 
+        return fig, ax
+
+    def get_var_cummulative_matching_plot(self, var_name, matching_list):
+        """
+        Recibe matching_list y verifica los valores en var_name de data. Genera un acumulado.
+        :param var_name: el nombre de la variable a contar
+        :param matching_list: los valores que cuentan como 1
+        :return:
+        """
+
+        fig, ax = plt.subplots()
+        data = self.get_var_from_data(var_name)
+
+        # compara con la lista y pone 1 si esta
+        test = np.isin(data, matching_list).astype(int)
+        # suma acumulada a traves de cada experimento
+        test = np.cumsum(test, axis=1)
+        # promedio de todos los experimentos
+        test = np.average(test, axis=0)
+
+        ax.plot(range(self.num_episodes), test, label=var_name)
+        return fig, ax
+
+    def get_pie_plot(self, var_name, mapping_dict):
+        """
+        Cuenta los elementos de una lista y los agrupa segun mapping_dict. Si alguna falta
+        le asigna la etiqueta other.
+        :param var_name:
+        :param mapping_dict:
+        :return:
+        """
+
+        fig, ax = plt.subplots()
+        data = self.get_var_from_data(var_name)
+        data = data.astype(int).flatten().tolist()
+        data_copy = data[:]
+
+        labels = mapping_dict.keys()
+
+        count = []
+        for l in labels:
+            c = 0
+            for d in range(len(data)):
+                if data[d] in mapping_dict[l]:
+                    c += 1
+                    data_copy.remove(data[d])
+            count.append(c)
+
+        labels.append('other')
+        count.append(len(data_copy))
+
+        ax.pie(count, labels=labels, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         return fig, ax
 
     def save_data(self, name):

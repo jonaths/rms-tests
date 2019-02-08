@@ -16,8 +16,8 @@ args_struct = namedtuple(
     'env_name number_steps rthres influence risk_default sim_func_name')
 
 args = args_struct(
-    env_name='beach-v0',
-    number_steps=10000,
+    env_name='border-v0',
+    number_steps=15000,
     rthres=-1,
     influence=2,
     risk_default=0,
@@ -53,7 +53,7 @@ s_t = process_obs(s_t)
 alg = RmsAlg(args.rthres, args.influence, args.risk_default, args.sim_func_name)
 alg.add_to_v(s_t, env.ind2coord(s_t))
 
-plotter = LinesPlotter(['r', 's'], 1, 1200)
+plotter = LinesPlotter(['reward', 'steps', 'end_state'], 1, 1000)
 
 while True:
 
@@ -62,13 +62,13 @@ while True:
 
     if done:
         final_reward = misc['sum_reward']
-        print(misc['step_seq'])
         final_num_steps = len(misc['step_seq'])
-        print(final_reward, final_num_steps)
+        final_state = misc['step_seq'][-1]
         plotter.add_episode_to_experiment(0, iteration,
                                           [
                                               final_reward,
-                                              final_num_steps
+                                              final_num_steps,
+                                              final_state
                                           ])
         agent.stopEpisode()
         agent.startEpisode()
@@ -87,7 +87,12 @@ while True:
 
     alg.update(s=s_t, r=r, sprime=obs, sprime_features=env.ind2coord(obs))
 
-    agent.observeTransition(s_t, action_idx, obs, r)
+    risk_penalty = abs(alg.get_risk(obs))
+
+    if(obs == 13):
+        print(risk_penalty)
+
+    agent.observeTransition(s_t, action_idx, obs, r - risk_penalty, lmb=1.0, risk=risk_penalty)
 
     print('Output:' + ' ' + str(iteration) + ' ' + str(step) + ' ' + str(
         args.number_steps) + ' ' + str(step * 100 / args.number_steps))
@@ -95,15 +100,31 @@ while True:
     s_t = obs
     step += 1
 
+exp_name = 'beachworld-euclidean'
+output_folder = 'output/'
+
 save_risk_map(
-    alg.get_risk_dict(), num_states, env.rows, env.cols, 'riskmap-beachworld-euclidean.png')
+    alg.get_risk_dict(), num_states, env.rows, env.cols, output_folder+'riskmap-'+exp_name+'.png')
 save_policy(
-    np.array(agent.getQTable(num_states, num_actions)), env.rows, env.cols, 'policy-beachworld-euclidean.png')
+    np.array(agent.getQTable(num_states, num_actions)), env.rows, env.cols, output_folder+'policy-'+exp_name+'.png')
 
-plotter.save_data('data')
+plotter.save_data(output_folder+'data')
 
-fig, ax = plotter.get_var_line_plot(['r', 's'], 'average', window_size=50)
+fig, ax = plotter.get_var_line_plot(['reward', 'steps'], 'average', window_size=50)
 fig.legend()
 plt.tight_layout()
-plt.show()
+plt.savefig(output_folder+'reward-steps.png')
+
+fig, ax = plotter.get_pie_plot('end_state',
+                               mapping_dict={
+                                   'safe': [env.finish_state_one],
+                                   'unsafe': env.hole_state})
+fig.legend()
+plt.tight_layout()
+plt.savefig(output_folder+'end-reasons-'+exp_name+'.png')
+
+fig, ax = plotter.get_var_cummulative_matching_plot('end_state', env.hole_state)
+fig.legend()
+plt.tight_layout()
+plt.savefig(output_folder+'end-cummulative-'+exp_name+'.png')
 

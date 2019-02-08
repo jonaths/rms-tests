@@ -360,6 +360,18 @@ class QLearningAgent(ReinforcementAgent):
 
 
 class LambdaRiskQLearningAgent(QLearningAgent):
+
+    def observeTransition(self, state, action, nextState, deltaReward, lmb=0, risk=0):
+        """
+            Called by environment to inform agent that a transition has
+            been observed. This will result in a call to self.update
+            on the same arguments
+
+            NOTE: Do *not* override or call this function
+        """
+        self.episodeRewards += deltaReward
+        self.update(state, action, nextState, deltaReward)
+
     def update(self, state, action, nextState, reward, lmb=0, risk=0):
         """
           The parent class calls this to observe a
@@ -369,7 +381,8 @@ class LambdaRiskQLearningAgent(QLearningAgent):
         #   print ("updating Q learning", state, action, nextState, reward)
         maxQ = self.computeValueFromQValues(nextState)
         self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
-                reward + self.discount * (maxQ - self.getQValue(state, action)) - lmb * risk)
+                reward + self.discount * (maxQ - self.getQValue(state, action)))
+        # self.qvals[(state, action)] = reward + maxQ - lmb * risk
         return self.qvals[(state, action)]
 
     def getQTable(self, num_states, num_actions):
