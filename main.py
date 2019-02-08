@@ -100,6 +100,8 @@ save_risk_map(
 save_policy(
     np.array(agent.getQTable(num_states, num_actions)), env.rows, env.cols, 'policy-beachworld-euclidean.png')
 
+plotter.save_data('data')
+
 fig, ax = plotter.get_var_line_plot(['r', 's'], 'average', window_size=50)
 fig.legend()
 plt.tight_layout()

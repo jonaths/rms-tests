@@ -44,8 +44,10 @@ class LinesPlotter:
         # Si se pasa un valor regresa unicamente ese elemento
         if var_name in self.var_names_list:
             index = self.var_names_list.index(var_name)
-            summary = np.expand_dims(self.summary[index], axis=0)
-        return summary
+            summary_pickled = np.expand_dims(self.summary[index], axis=0)
+        else:
+            raise Exception('Invalid var_name. ')
+        return summary_pickled
 
     def get_var_line_plot(self, var_name_list, func, window_size=10):
         fig, ax = plt.subplots()
@@ -59,3 +61,29 @@ class LinesPlotter:
             ax.plot(range(self.num_episodes), data, label=var)
 
         return fig, ax
+
+    def save_data(self, name):
+        numpy_data = np.array(self.data)
+        np.save(name, numpy_data)
+        return self
+
+    @staticmethod
+    def load_data(name, var_name_list=None):
+        """
+        Carga un archivo de datos y crea un objeto LinesPlotter
+        :param name: el nombre del archivo que contiene los datos guardado con save_data()
+        :param var_name_list: el nombre de los datos guardados. Si no esta les asigna un entero.
+        :return:
+        """
+        data = np.load(name)
+        num_experiments = data.shape[0]
+        num_episodes = data.shape[1]
+
+        if var_name_list is None:
+            var_name_list = [str(i) for i in range(data.shape[2])]
+        elif len(var_name_list) != data.shape[2]:
+            raise Exception('Invalid var_name_list. Must have len'+str(data.shape[2]))
+
+        plotter = LinesPlotter(var_name_list, num_experiments, num_episodes)
+        plotter.data = data
+        return plotter
