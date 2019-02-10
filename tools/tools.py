@@ -3,6 +3,22 @@ from plotters.plotter import PolicyPlotter
 import matplotlib.pyplot as plt
 
 
+def ind2coord(num_rows, index):
+    """
+    Converts an index to coordinates
+    :param num_rows:
+    :param index: int
+    :return:
+    """
+
+    assert (index >= 0)
+    # assert(index < self.n - 1)
+
+    col = index // num_rows
+    row = index % num_rows
+
+    return [row, col]
+
 def create_states_list_from_dict(states_dict, num_states):
     states_list = []
     for i in range(num_states):
@@ -15,8 +31,10 @@ def create_states_list_from_dict(states_dict, num_states):
 def process_obs(obs, params=None, name=None):
     if name == 'grid':
         return obs
+    elif name == 'buckets':
+        return 1
     else:
-        return obs
+        raise Exception('Invalid name. ')
 
 
 def save_risk_map(states_dict, num_states, num_rows, num_cols, name):

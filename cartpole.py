@@ -1,12 +1,11 @@
 import gym
-import gym_windy
+# import gym_windy
 import numpy as np
 from rms.rms import RmsAlg
 import sys
 from plotters.plotter import PolicyPlotter
 import matplotlib.pyplot as plt
 from tools import tools
-from tools.history import History
 from random import randint
 from collections import namedtuple
 from tools.qlearning import LambdaRiskQLearningAgent
@@ -15,22 +14,23 @@ import matplotlib
 
 args_struct = namedtuple(
     'args',
-    'env_name number_steps rthres influence risk_default sim_func_name')
+    'env_name number_steps rthres influence risk_default sim_func_name buckets')
 
 args = args_struct(
-    env_name='border-v0',
+    env_name='CartPole-v0',
     number_steps=21000,
     rthres=-1,
     influence=2,
     risk_default=0,
-    sim_func_name='euclidean'
+    sim_func_name='euclidean',
+    buckets=(1, 1, 6, 12)
 )
 
 print(args)
 
 env = gym.make(args.env_name)
 
-actionFn = lambda state: env.get_possible_actions(state)
+actionFn = lambda state: [0, 1]
 qLearnOpts = {
     'gamma': 0.9,
     'alpha': 0.1,
@@ -42,28 +42,28 @@ qLearnOpts = {
 agent = LambdaRiskQLearningAgent(**qLearnOpts)
 agent.setEpsilon(0.1)
 
-num_states = env.cols * env.rows
+num_rows = 6
+num_cols = 12
+num_states = num_rows * num_cols
 num_actions = 4
 iteration = 0
 step = 0
+misc = ['rewards': [], 'steps': []]
 
 done = False
 agent.startEpisode()
 s_t = env.reset()
-s_t = tools.process_obs(s_t, name='grid')
+s_t = tools.process_obs(s_t, name='buckets')
 
 alg = RmsAlg(args.rthres, args.influence, args.risk_default, args.sim_func_name)
-alg.add_to_v(s_t, env.ind2coord(s_t))
+alg.add_to_v(s_t, tools.ind2coord(num_rows, s_t))
 
 plotter = LinesPlotter(['reward', 'steps', 'end_state'], 1, 1000)
-history = History()
 
 while True:
 
     if step >= args.number_steps:
         break
-
-
 
     if done:
         final_reward = misc['sum_reward']
@@ -71,15 +71,14 @@ while True:
         final_state = misc['step_seq'][-1]
         plotter.add_episode_to_experiment(0, iteration,
                                           [
-                                              history.get_total_reward(),
-                                              history.get_steps_count(),
-                                              history.get_state_sequence()[-1]
+                                              final_reward,
+                                              final_num_steps,
+                                              final_state
                                           ])
-        history.clear()
         agent.stopEpisode()
         agent.startEpisode()
         s_t = env.reset()
-        s_t = tools.process_obs(s_t, name='grid')
+        s_t = tools.process_obs(s_t)
         iteration += 1
 
     # env.render()
@@ -89,24 +88,22 @@ while True:
     # action_idx = int(input('Action: '))
 
     obs, r, done, misc = env.step(action_idx)
-    obs = tools.process_obs(obs, name='grid')
-    history.insert((s_t, action_idx, r, obs))
+    current_state = tools.process_obs(obs, name='buckets')
 
-    alg.update(s=s_t, r=r, sprime=obs, sprime_features=env.ind2coord(obs))
+    alg.update(s=s_t, r=r, sprime=current_state, sprime_features=tools.ind2coord(num_rows, current_state))
 
-    risk_penalty = abs(alg.get_risk(obs))
+    risk_penalty = abs(alg.get_risk(current_state))
 
-    agent.observeTransition(s_t, action_idx, obs, r - risk_penalty, lmb=1.0, risk=risk_penalty)
+    agent.observeTransition(s_t, action_idx, current_state, r, lmb=1.0, risk=risk_penalty)
 
     print('Output:' + ' ' + str(iteration) + ' ' + str(step) + ' ' + str(
         args.number_steps) + ' ' + str(step * 100 / args.number_steps))
 
-    s_t = obs
+    s_t = current_state
     step += 1
 
 exp_name = 'beachworld-euclidean'
 output_folder = 'output/'
-
 
 
 tools.save_risk_map(
