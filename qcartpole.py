@@ -29,7 +29,7 @@ class QCartPoleSolver():
         self.plotter = LinesPlotter(['reward', 'steps', 'end_state'], 1, n_episodes)
         self.history = History()
 
-        self.alg = RmsAlg(-1, 2, 0, 'euclidean')
+        self.alg = RmsAlg(-1, 4, 0, 'euclidean')
         self.danger_states = []
         for i in range(6 * 12):
             if tools.is_top_or_bottom(i):
