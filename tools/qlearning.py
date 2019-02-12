@@ -158,10 +158,10 @@ class ReinforcementAgent(ValueEstimationAgent):
         else:
             self.accumTestRewards += self.episodeRewards
         self.episodesSoFar += 1
-        # if self.episodesSoFar >= self.numTraining:
-        #     # Take off the training wheels
-        #     self.epsilon = 0.0  # no exploration
-        #     self.alpha = 0.0  # no learning
+        if self.episodesSoFar >= self.numTraining:
+            # Take off the training wheels
+            self.epsilon = 0.0  # no exploration
+            self.alpha = 0.0  # no learning
 
     def isInTraining(self):
         return self.episodesSoFar < self.numTraining

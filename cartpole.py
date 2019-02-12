@@ -6,6 +6,7 @@ import sys
 from plotters.plotter import PolicyPlotter
 import matplotlib.pyplot as plt
 from tools import tools
+from tools.history import History
 from random import randint
 from collections import namedtuple
 from tools.qlearning import LambdaRiskQLearningAgent
@@ -18,9 +19,9 @@ args_struct = namedtuple(
 
 args = args_struct(
     env_name='CartPole-v0',
-    number_steps=21000,
+    number_steps=40000,
     rthres=-1,
-    influence=2,
+    influence=3,
     risk_default=0,
     sim_func_name='euclidean',
     buckets=(1, 1, 6, 12)
@@ -35,9 +36,14 @@ qLearnOpts = {
     'gamma': 0.9,
     'alpha': 0.1,
     'epsilon': 0.1,
-    'numTraining': 1000,
+    'numTraining': int(0.75 * args.number_steps),
     'actionFn': actionFn
 }
+
+process_params = {
+        'env': env,
+        'buckets': args.buckets
+    }
 
 agent = LambdaRiskQLearningAgent(**qLearnOpts)
 agent.setEpsilon(0.1)
@@ -48,37 +54,42 @@ num_states = num_rows * num_cols
 num_actions = 4
 iteration = 0
 step = 0
-misc = ['rewards': [], 'steps': []]
 
 done = False
 agent.startEpisode()
 s_t = env.reset()
-s_t = tools.process_obs(s_t, name='buckets')
+s_t = tools.process_obs(s_t, name='buckets', params=process_params)
+danger_states = [0, 1, 2, 3, 4, 5, 66, 67, 68, 69, 71, 71]
 
 alg = RmsAlg(args.rthres, args.influence, args.risk_default, args.sim_func_name)
 alg.add_to_v(s_t, tools.ind2coord(num_rows, s_t))
 
 plotter = LinesPlotter(['reward', 'steps', 'end_state'], 1, 1000)
+history = History()
+
 
 while True:
+
+    # print(history.history)
+
 
     if step >= args.number_steps:
         break
 
     if done:
-        final_reward = misc['sum_reward']
-        final_num_steps = len(misc['step_seq'])
-        final_state = misc['step_seq'][-1]
+        print(s_t)
         plotter.add_episode_to_experiment(0, iteration,
                                           [
-                                              final_reward,
-                                              final_num_steps,
-                                              final_state
+                                              history.get_total_reward(),
+                                              history.get_steps_count(),
+                                              history.get_state_sequence()[-1]
                                           ])
+        history.clear()
         agent.stopEpisode()
         agent.startEpisode()
         s_t = env.reset()
-        s_t = tools.process_obs(s_t)
+        s_t = tools.process_obs(s_t, name='buckets', params=process_params)
+        alg.add_to_v(s_t, tools.ind2coord(num_rows, s_t))
         iteration += 1
 
     # env.render()
@@ -87,10 +98,13 @@ while True:
     action_idx = agent.getAction(s_t)
     # action_idx = int(input('Action: '))
 
-    obs, r, done, misc = env.step(action_idx)
-    current_state = tools.process_obs(obs, name='buckets')
 
-    alg.update(s=s_t, r=r, sprime=current_state, sprime_features=tools.ind2coord(num_rows, current_state))
+
+    obs, r, done, misc = env.step(action_idx)
+    current_state = tools.process_obs(obs, name='buckets', params=process_params)
+    history.insert((s_t, action_idx, r, current_state))
+
+    alg.update(s=s_t, r=-10 if s_t in danger_states else r, sprime=current_state, sprime_features=tools.ind2coord(num_rows, current_state))
 
     risk_penalty = abs(alg.get_risk(current_state))
 
@@ -102,14 +116,14 @@ while True:
     s_t = current_state
     step += 1
 
-exp_name = 'beachworld-euclidean'
+exp_name = 'cartpole-euclidean'
 output_folder = 'output/'
 
 
 tools.save_risk_map(
-    alg.get_risk_dict(), num_states, env.rows, env.cols, output_folder+'riskmap-'+exp_name+'.png')
+    alg.get_risk_dict(), num_states, num_rows, num_cols, output_folder+'riskmap-'+exp_name+'.png')
 tools.save_policy(
-    np.array(agent.getQTable(num_states, num_actions)), env.rows, env.cols, output_folder+'policy-'+exp_name+'.png')
+    np.array(agent.getQTable(num_states, num_actions)), num_rows, num_cols, output_folder+'policy-'+exp_name+'.png')
 
 plotter.save_data(output_folder+'data')
 
@@ -120,14 +134,15 @@ fig.legend()
 plt.tight_layout()
 plt.savefig(output_folder+'reward-steps.png')
 
+
 fig, ax = plotter.get_pie_plot('end_state',
                                mapping_dict={
-                                   'safe': [env.finish_state_one],
-                                   'unsafe': env.hole_state})
+                                   'unsafe': danger_states
+                               })
 plt.tight_layout()
 plt.savefig(output_folder+'end-reasons-'+exp_name+'.png')
 
-fig, ax = plotter.get_var_cummulative_matching_plot('end_state', env.hole_state)
+fig, ax = plotter.get_var_cummulative_matching_plot('end_state', danger_states)
 fig.legend()
 plt.tight_layout()
 plt.savefig(output_folder+'end-cummulative-'+exp_name+'.png')

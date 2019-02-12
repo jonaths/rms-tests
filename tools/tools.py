@@ -1,6 +1,35 @@
 import numpy as np
 from plotters.plotter import PolicyPlotter
 import matplotlib.pyplot as plt
+import math
+import sys
+
+
+def is_top_or_bottom(number, num_rows=6):
+    test = number % num_rows
+    if test == 0:
+        return True
+    elif test == num_rows - 1:
+        return True
+    else:
+        return False
+
+
+def coord2ind(coord, num_rows, num_cols):
+    """
+    Converts coordinates to index
+    :param num_cols:
+    :param num_rows:
+    :param coord: [x, y]
+    :return:
+    """
+
+    [row, col] = coord
+
+    assert (row < num_rows)
+    assert (col < num_cols)
+
+    return col * num_rows + row
 
 
 def ind2coord(num_rows, index):
@@ -19,6 +48,7 @@ def ind2coord(num_rows, index):
 
     return [row, col]
 
+
 def create_states_list_from_dict(states_dict, num_states):
     states_list = []
     for i in range(num_states):
@@ -32,9 +62,25 @@ def process_obs(obs, params=None, name=None):
     if name == 'grid':
         return obs
     elif name == 'buckets':
-        return 1
+        tup = discretize(obs, params)
+        # esto debe ir de acuerdo al numero de buckets
+        # el -2 es para considerar solo angulo y su derivada que son los dos ultimos
+        int_state = coord2ind(tup[-2:], 6, 12)
+        return int_state
     else:
         raise Exception('Invalid name. ')
+
+
+def discretize(obs, params):
+    upper_bounds = [params['env'].observation_space.high[0], 0.5, params['env'].observation_space.high[2],
+                    math.radians(50)]
+    lower_bounds = [params['env'].observation_space.low[0], -0.5, params['env'].observation_space.low[2],
+                    -math.radians(50)]
+    ratios = [(obs[i] + abs(lower_bounds[i])) / (upper_bounds[i] - lower_bounds[i]) for i in
+              range(len(obs))]
+    new_obs = [int(round((params['buckets'][i] - 1) * ratios[i])) for i in range(len(obs))]
+    new_obs = [min(params['buckets'][i] - 1, max(0, new_obs[i])) for i in range(len(obs))]
+    return tuple(new_obs)
 
 
 def save_risk_map(states_dict, num_states, num_rows, num_cols, name):
@@ -52,7 +98,7 @@ def save_risk_map(states_dict, num_states, num_rows, num_cols, name):
     fig.savefig(name, dpi=100)
 
 
-def save_policy(qtable, num_rows, num_cols, name):
+def save_policy(qtable, num_rows, num_cols, name, labels=['^', 'v']):
 
     plotter = PolicyPlotter(qtable, num_rows, num_cols)
 
@@ -60,6 +106,6 @@ def save_policy(qtable, num_rows, num_cols, name):
     fig, ax = plt.subplots()
     fig.set_size_inches(5, 5)
     im, cbar, text = plotter.build_policy(
-        labels=['^', '>', 'v', '<'], show_numbers=False, cmap='Blues')
+        labels=labels, show_numbers=False, cmap='Blues')
     fig.tight_layout()
     fig.savefig(name, dpi=100)

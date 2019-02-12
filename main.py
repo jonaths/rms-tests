@@ -63,12 +63,8 @@ while True:
     if step >= args.number_steps:
         break
 
-
-
     if done:
-        final_reward = misc['sum_reward']
-        final_num_steps = len(misc['step_seq'])
-        final_state = misc['step_seq'][-1]
+
         plotter.add_episode_to_experiment(0, iteration,
                                           [
                                               history.get_total_reward(),
@@ -112,7 +108,10 @@ output_folder = 'output/'
 tools.save_risk_map(
     alg.get_risk_dict(), num_states, env.rows, env.cols, output_folder+'riskmap-'+exp_name+'.png')
 tools.save_policy(
-    np.array(agent.getQTable(num_states, num_actions)), env.rows, env.cols, output_folder+'policy-'+exp_name+'.png')
+    np.array(agent.getQTable(num_states, num_actions)),
+    env.rows,
+    env.cols, output_folder+'policy-'+exp_name+'.png',
+    labels=['^', '>', 'v', '<'])
 
 plotter.save_data(output_folder+'data')
 
