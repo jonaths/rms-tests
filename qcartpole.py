@@ -4,6 +4,8 @@ import math
 from collections import deque
 import sys
 
+from rms.rms import RmsAlg
+
 from tools import tools
 from tools.history import History
 from tools.line_plotter import LinesPlotter
@@ -26,6 +28,16 @@ class QCartPoleSolver():
         self.quiet = quiet
         self.plotter = LinesPlotter(['reward', 'steps', 'end_state'], 1, n_episodes)
         self.history = History()
+
+        self.alg = RmsAlg(-1, 2, 0, 'euclidean')
+        self.danger_states = []
+        for i in range(6 * 12):
+            if tools.is_top_or_bottom(i):
+                self.danger_states.append(i)
+
+        self.danger_states.append(1)
+        self.danger_states.append(70)
+
 
         self.env = gym.make('CartPole-v0')
         if max_env_steps is not None:
@@ -70,6 +82,9 @@ class QCartPoleSolver():
 
         for e in range(self.n_episodes):
             current_state = self.discretize(self.env.reset())
+            self.alg.add_to_v(
+                tools.coord2ind(current_state[-2:], 6, 12),
+                current_state)
 
             alpha = self.get_alpha(e)
             epsilon = self.get_epsilon(e)
@@ -82,6 +97,15 @@ class QCartPoleSolver():
                 obs, reward, done, _ = self.env.step(action)
                 new_state = self.discretize(obs)
                 self.history.insert((current_state, action, reward, new_state))
+
+                current_state_ind = tools.coord2ind(current_state[-2:], 6, 12)
+                s_prime_ind = tools.coord2ind(new_state[-2:], 6, 12)
+                self.alg.update(
+                    s=current_state_ind,
+                    r=-10 if s_prime_ind in self.danger_states else reward,
+                    sprime=s_prime_ind,
+                    sprime_features=new_state)
+                risk_penalty = abs(self.alg.get_risk(current_state_ind))
                 self.update_q(current_state, action, reward, new_state, alpha)
                 current_state = new_state
                 i += 1
@@ -116,16 +140,14 @@ class QCartPoleSolver():
 
         self.plotter.save_data(output_folder+'data')
 
-        danger_states = []
-        for i in range(6 * 12):
-            if tools.is_top_or_bottom(i):
-                danger_states.append(i)
 
-        danger_states.append(1)
-        danger_states.append(70)
-        print(danger_states)
+        print(self.danger_states)
 
         exp_name = 'cartpole-euclidean'
+
+        tools.save_risk_map(
+            self.alg.get_risk_dict(), 6*12, 6, 12,
+            output_folder + 'riskmap-' + exp_name + '.png')
 
 
         fig, ax = self.plotter.get_var_line_plot(['reward', 'steps'], 'average', window_size=50)
@@ -135,7 +157,7 @@ class QCartPoleSolver():
 
         # aqui voy... no grafica el historial de fallos
 
-        fig, ax = self.plotter.get_var_cummulative_matching_plot('end_state', danger_states)
+        fig, ax = self.plotter.get_var_cummulative_matching_plot('end_state', self.danger_states)
         fig.legend()
         plt.tight_layout()
         plt.savefig(output_folder + 'end-cummulative-' + exp_name + '.png')
