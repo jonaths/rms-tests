@@ -2,13 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="8960a58e-6fcf-4a0d-9695-328ea83378b6" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/qcartpole.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cartpole.py" beforeDir="false" afterPath="$PROJECT_DIR$/cartpole.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/qlearning.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/qlearning.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/tools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qcartpole.py" beforeDir="false" afterPath="$PROJECT_DIR$/qcartpole.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -35,8 +30,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/qcartpole.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="871">
-                  <caret line="139" lean-forward="true" selection-start-line="139" selection-end-line="139" />
+                <state relative-caret-position="496">
+                  <caret line="114" column="33" selection-start-line="114" selection-start-column="33" selection-end-line="114" selection-end-column="33" />
                   <folding>
                     <element signature="e#0#10#0" expanded="true" />
                   </folding>
@@ -78,11 +73,11 @@
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="false">
+          <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/cartpole.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1740">
-                  <caret line="129" column="20" selection-start-line="129" selection-start-column="20" selection-end-line="129" selection-end-column="20" />
+                <state relative-caret-position="587">
+                  <caret line="127" selection-start-line="127" selection-end-line="127" selection-end-column="39" />
                   <folding>
                     <element signature="e#0#10#0" expanded="true" />
                   </folding>
@@ -102,11 +97,11 @@
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="true">
+          <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/tools/line_plotter.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="475">
-                  <caret line="84" column="47" lean-forward="true" selection-start-line="84" selection-start-column="47" selection-end-line="84" selection-end-column="47" />
+                  <caret line="84" column="47" selection-start-line="84" selection-start-column="47" selection-end-line="84" selection-end-column="47" />
                   <folding>
                     <element signature="e#0#18#0" expanded="true" />
                   </folding>
@@ -155,8 +150,8 @@
         <option value="$PROJECT_DIR$/tools/tools.py" />
         <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/test.py" />
-        <option value="$PROJECT_DIR$/qcartpole.py" />
         <option value="$PROJECT_DIR$/tools/line_plotter.py" />
+        <option value="$PROJECT_DIR$/qcartpole.py" />
       </list>
     </option>
   </component>
@@ -243,12 +238,12 @@
       <workItem from="1549684617896" duration="1407000" />
       <workItem from="1549747884385" duration="13272000" />
       <workItem from="1549910672983" duration="23709000" />
-      <workItem from="1549988911355" duration="3809000" />
+      <workItem from="1549988911355" duration="4716000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="98169000" />
+    <option name="totallyTimeSpent" value="99076000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="1366" y="-2" width="1920" height="1202" extended-state="6" />
@@ -375,16 +370,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/cartpole.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1740">
-          <caret line="129" column="20" selection-start-line="129" selection-start-column="20" selection-end-line="129" selection-end-column="20" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/tools/tools.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-629">
@@ -415,22 +400,32 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/qcartpole.py">
+    <entry file="file://$PROJECT_DIR$/tools/line_plotter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="871">
-          <caret line="139" lean-forward="true" selection-start-line="139" selection-end-line="139" />
+        <state relative-caret-position="475">
+          <caret line="84" column="47" selection-start-line="84" selection-start-column="47" selection-end-line="84" selection-end-column="47" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cartpole.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="587">
+          <caret line="127" selection-start-line="127" selection-end-line="127" selection-end-column="39" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/tools/line_plotter.py">
+    <entry file="file://$PROJECT_DIR$/qcartpole.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="475">
-          <caret line="84" column="47" lean-forward="true" selection-start-line="84" selection-start-column="47" selection-end-line="84" selection-end-column="47" />
+        <state relative-caret-position="496">
+          <caret line="114" column="33" selection-start-line="114" selection-start-column="33" selection-end-line="114" selection-end-column="33" />
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>

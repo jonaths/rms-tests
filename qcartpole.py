@@ -112,7 +112,9 @@ class QCartPoleSolver():
 
     def plot(self):
 
-        print(self.plotter.data)
+        output_folder = 'output/'
+
+        self.plotter.save_data(output_folder+'data')
 
         danger_states = []
         for i in range(6 * 12):
@@ -124,7 +126,7 @@ class QCartPoleSolver():
         print(danger_states)
 
         exp_name = 'cartpole-euclidean'
-        output_folder = 'output/'
+
 
         fig, ax = self.plotter.get_var_line_plot(['reward', 'steps'], 'average', window_size=50)
         fig.legend()
