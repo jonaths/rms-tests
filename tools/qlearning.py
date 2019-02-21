@@ -385,6 +385,11 @@ class LambdaRiskQLearningAgent(QLearningAgent):
         # self.qvals[(state, action)] = reward + maxQ - lmb * risk
         return self.qvals[(state, action)]
 
+    def updateSARSA(self, state, action, reward, nextState, nextAction, lmb=0, risk=0):
+        self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
+                reward + self.discount * (self.getQValue(nextState, nextAction) - self.getQValue(state, action)))
+        return self.qvals[(state, action)]
+
     def getQTable(self, num_states, num_actions):
         qTable = []
         for s in range(num_states):
@@ -393,3 +398,5 @@ class LambdaRiskQLearningAgent(QLearningAgent):
                 values.append(self.getQValue(s, a))
             qTable.append(values)
         return qTable
+
+

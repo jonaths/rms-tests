@@ -7,8 +7,8 @@ import sys
 from rms.rms import RmsAlg
 
 from tools import tools
-from tools.history import History
-from tools.line_plotter import LinesPlotter
+from plotters.history import History
+from plotters.line_plotter import LinesPlotter
 
 import matplotlib.pyplot as plt
 import matplotlib
@@ -106,7 +106,7 @@ class QCartPoleSolver():
                     sprime=s_prime_ind,
                     sprime_features=new_state)
                 risk_penalty = abs(self.alg.get_risk(current_state_ind))
-                self.update_q(current_state, action, reward, new_state, alpha)
+                self.update_q(current_state, action, reward - risk_penalty, new_state, alpha)
                 current_state = new_state
                 i += 1
 
