@@ -92,7 +92,19 @@ while True:
 
     risk_penalty = abs(alg.get_risk(obs))
 
-    agent.observeTransition(s_t, action_idx, obs, r - risk_penalty, lmb=1.0, risk=risk_penalty)
+    now = history.history[-1]
+    agent.observeTransition(state=s_t, action=action_idx, deltaReward=r - risk_penalty, nextState=obs)
+
+
+
+    # if history.get_steps_count() > 1:
+    #
+    #     now = history.history[-1]
+    #     prev = history.history[-2]
+    #
+    #     agent.observeSARSATransition(
+    #         state=prev[0], action=prev[1], deltaReward=prev[2], nextState=now[0], nextAction=now[1]
+    #     )
 
     print('Output:' + ' ' + str(iteration) + ' ' + str(step) + ' ' + str(
         args.number_steps) + ' ' + str(step * 100 / args.number_steps))
