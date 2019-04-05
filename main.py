@@ -51,6 +51,7 @@ done = False
 agent.startEpisode()
 s_t = env.reset()
 s_t = tools.process_obs(s_t, name='grid')
+action_idx = agent.getAction(s_t)
 
 alg = RmsAlg(args.rthres, args.influence, args.risk_default, args.sim_func_name)
 alg.add_to_v(s_t, env.ind2coord(s_t))
@@ -76,40 +77,40 @@ while True:
         agent.startEpisode()
         s_t = env.reset()
         s_t = tools.process_obs(s_t, name='grid')
+        action_idx = agent.getAction(s_t)
         iteration += 1
 
     # env.render()
 
     # action_idx = int(randint(0, 3))
-    action_idx = agent.getAction(s_t)
+    # action_idx = agent.getAction(s_t)
     # action_idx = int(input('Action: '))
 
     obs, r, done, misc = env.step(action_idx)
     obs = tools.process_obs(obs, name='grid')
     history.insert((s_t, action_idx, r, obs))
 
-    alg.update(s=s_t, r=r, sprime=obs, sprime_features=env.ind2coord(obs))
+    alg.update(
+        s=s_t, r=r, sprime=obs, sprime_features=env.ind2coord(obs))
 
     risk_penalty = abs(alg.get_risk(obs))
 
-    now = history.history[-1]
-    agent.observeTransition(state=s_t, action=action_idx, deltaReward=r - risk_penalty, nextState=obs)
+    next_action = agent.getAction(obs)
+    agent.observeSARSATransition(
+        state=s_t, action=action_idx, deltaReward=r, nextState=obs, nextAction=next_action
+    )
 
+    # if step > 4:
+    #     sys.exit(0)
 
-
-    # if history.get_steps_count() > 1:
-    #
-    #     now = history.history[-1]
-    #     prev = history.history[-2]
-    #
-    #     agent.observeSARSATransition(
-    #         state=prev[0], action=prev[1], deltaReward=prev[2], nextState=now[0], nextAction=now[1]
-    #     )
+    # agent.observeTransition(
+    #     state=s_t, action=action_idx, deltaReward=r - risk_penalty, nextState=obs)
 
     print('Output:' + ' ' + str(iteration) + ' ' + str(step) + ' ' + str(
         args.number_steps) + ' ' + str(step * 100 / args.number_steps))
 
     s_t = obs
+    action_idx = next_action
     step += 1
 
 exp_name = 'beachworld-euclidean'
