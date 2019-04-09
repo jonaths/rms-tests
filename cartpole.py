@@ -59,6 +59,8 @@ done = False
 agent.startEpisode()
 s_t = env.reset()
 s_t = tools.process_obs(s_t, name='buckets', params=process_params)
+action_idx = agent.getAction(s_t)
+
 danger_states = [0, 1, 2, 3, 4, 5, 66, 67, 68, 69, 70, 71]
 
 alg = RmsAlg(args.rthres, args.influence, args.risk_default, args.sim_func_name)
@@ -67,6 +69,8 @@ alg.add_to_v(s_t, tools.ind2coord(num_rows, s_t))
 plotter = LinesPlotter(['reward', 'steps', 'end_state'], 1, 1000)
 history = History()
 
+# cambiar la estructura a la de gist.txt. Iniciar la accion antes de entrar al ciclo,
+# a lterminar y antes de actualizarr obsevetransiutiosb
 
 while True:
 
@@ -89,31 +93,32 @@ while True:
         agent.startEpisode()
         s_t = env.reset()
         s_t = tools.process_obs(s_t, name='buckets', params=process_params)
+        action_idx = agent.getAction(s_t)
         alg.add_to_v(s_t, tools.ind2coord(num_rows, s_t))
         iteration += 1
 
     # env.render()
 
     # action_idx = int(randint(0, 3))
-    action_idx = agent.getAction(s_t)
+    # action_idx = agent.getAction(s_t)
     # action_idx = int(input('Action: '))
 
-
-
     obs, r, done, misc = env.step(action_idx)
-    current_state = tools.process_obs(obs, name='buckets', params=process_params)
-    history.insert((s_t, action_idx, r, current_state))
+    obs = tools.process_obs(obs, name='buckets', params=process_params)
+    history.insert((s_t, action_idx, r, obs))
 
-    alg.update(s=s_t, r=-10 if s_t in danger_states else r, sprime=current_state, sprime_features=tools.ind2coord(num_rows, current_state))
+    alg.update(s=s_t, r=-10 if s_t in danger_states else r, sprime=obs, sprime_features=tools.ind2coord(num_rows, obs))
 
-    risk_penalty = abs(alg.get_risk(current_state))
+    risk_penalty = abs(alg.get_risk(obs))
 
-    agent.observeTransition(s_t, action_idx, current_state, r, lmb=1.0, risk=risk_penalty)
+    next_action = agent.getAction(obs)
+    agent.observeTransition(s_t, action_idx, obs, r, lmb=1.0, risk=risk_penalty)
 
     print('Output:' + ' ' + str(iteration) + ' ' + str(step) + ' ' + str(
         args.number_steps) + ' ' + str(step * 100 / args.number_steps))
 
-    s_t = current_state
+    s_t = obs
+    action_idx = next_action
     step += 1
 
 exp_name = 'cartpole-euclidean'

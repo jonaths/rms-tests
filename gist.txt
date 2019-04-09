@@ -1,0 +1,194 @@
+import gym
+import gym_windy
+import numpy as np
+from rms.rms import RmsAlg
+import sys
+from plotters.plotter import PolicyPlotter
+import matplotlib.pyplot as plt
+from tools import tools
+from tools.history import History
+from random import randint
+from collections import namedtuple
+from tools.qlearning import LambdaRiskQLearningAgent
+from tools.line_plotter import LinesPlotter
+import matplotlib
+
+args_struct = namedtuple(
+    'args',
+    'env_name number_steps rthres influence risk_default sim_func_name')
+
+args = args_struct(
+    env_name='border-v0',
+    number_steps=21000,
+    rthres=-1,
+    influence=2,
+    risk_default=0,
+    sim_func_name='euclidean'
+)
+
+print(args)
+
+env = gym.make(args.env_name)
+
+actionFn = lambda state: env.get_possible_actions(state)
+qLearnOpts = {
+    'gamma': 0.9,
+    'alpha': 0.1,
+    'epsilon': 0.1,
+    'numTraining': 1000,
+    'actionFn': actionFn
+}
+
+agent = LambdaRiskQLearningAgent(**qLearnOpts)
+agent.setEpsilon(0.1)
+
+num_states = env.cols * env.rows
+num_actions = 4
+iteration = 0
+step = 0
+
+done = False
+agent.startEpisode()
+s_t = env.reset()
+s_t = tools.process_obs(s_t, name='grid')
+action_idx = agent.getAction(s_t)
+
+alg = RmsAlg(args.rthres, args.influence, args.risk_default, args.sim_func_name)
+alg.add_to_v(s_t, env.ind2coord(s_t))
+
+plotter = LinesPlotter(['reward', 'steps', 'end_state'], 1, 1000)
+history = History()
+
+while True:
+
+    if step >= args.number_steps:
+        break
+
+    if done:
+
+        plotter.add_episode_to_experiment(0, iteration,
+                                          [
+                                              history.get_total_reward(),
+                                              history.get_steps_count(),
+                                              history.get_state_sequence()[-1]
+                                          ])
+        history.clear()
+        agent.stopEpisode()
+        agent.startEpisode()
+        s_t = env.reset()
+        s_t = tools.process_obs(s_t, name='grid')
+        action_idx = agent.getAction(s_t)
+        iteration += 1
+
+    # env.render()
+
+    # action_idx = int(randint(0, 3))
+    # action_idx = agent.getAction(s_t)
+    # action_idx = int(input('Action: '))
+
+    obs, r, done, misc = env.step(action_idx)
+    obs = tools.process_obs(obs, name='grid')
+    history.insert((s_t, action_idx, r, obs))
+
+    alg.update(
+        s=s_t, r=r, sprime=obs, sprime_features=env.ind2coord(obs))
+
+    risk_penalty = abs(alg.get_risk(obs))
+
+    next_action = agent.getAction(obs)
+    agent.observeSARSATransition(
+        state=s_t, action=action_idx, deltaReward=r, nextState=obs, nextAction=next_action
+    )
+
+    # if step > 4:
+    #     sys.exit(0)
+
+    # agent.observeTransition(
+    #     state=s_t, action=action_idx, deltaReward=r - risk_penalty, nextState=obs)
+
+    print('Output:' + ' ' + str(iteration) + ' ' + str(step) + ' ' + str(
+        args.number_steps) + ' ' + str(step * 100 / args.number_steps))
+
+    s_t = obs
+    action_idx = next_action
+    step += 1
+
+exp_name = 'beachworld-euclidean'
+output_folder = 'output/'
+
+
+
+tools.save_risk_map(
+    alg.get_risk_dict(), num_states, env.rows, env.cols, output_folder+'riskmap-'+exp_name+'.png')
+tools.save_policy(
+    np.array(agent.getQTable(num_states, num_actions)),
+    env.rows,
+    env.cols, output_folder+'policy-'+exp_name+'.png',
+    labels=['^', '>', 'v', '<'])
+
+plotter.save_data(output_folder+'data')
+
+matplotlib.rcParams.update({'font.size': 22})
+
+fig, ax = plotter.get_var_line_plot(['reward', 'steps'], 'average', window_size=50)
+fig.legend()
+plt.tight_layout()
+plt.savefig(output_folder+'reward-steps.png')
+
+fig, ax = plotter.get_pie_plot('end_state',
+                               mapping_dict={
+                                   'safe': [env.finish_state_one],
+                                   'unsafe': env.hole_state})
+plt.tight_layout()
+plt.savefig(output_folder+'end-reasons-'+exp_name+'.png')
+
+fig, ax = plotter.get_var_cummulative_matching_plot('end_state', env.hole_state)
+fig.legend()
+plt.tight_layout()
+plt.savefig(output_folder+'end-cummulative-'+exp_name+'.png')
+
+class LambdaRiskQLearningAgent(QLearningAgent):
+
+    def observeSARSATransition(self, state, action, deltaReward, nextState, nextAction):
+        """
+            Called by environment to inform agent that a transition has
+            been observed. This will result in a call to self.update
+            on the same arguments
+
+            NOTE: Do *not* override or call this function
+        """
+        self.episodeRewards += deltaReward
+        self.updateSARSA(state, action, deltaReward, nextState, nextAction)
+
+    def updateSARSA(self, state, action, reward, nextState, nextAction):
+        maxQ = self.computeValueFromQValues(nextState)
+        self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
+                reward + self.discount * (maxQ - self.getQValue(state, action)))
+        # self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
+        #         reward + self.discount * (
+        #         self.getQValue(nextState, nextAction) - self.getQValue(state, action)
+        # ))
+
+        return self.qvals[(state, action)]
+
+    #     def update(self, state, action, nextState, reward, lmb=0, risk=0):
+    #         """
+    #           The parent class calls this to observe a
+    #           state = action => nextState and reward transition.
+    #           You should do your Q-Value update here
+    #         """
+    #         #   print ("updating Q learning", state, action, nextState, reward)
+    #         maxQ = self.computeValueFromQValues(nextState)
+    #         self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
+    #                 reward + self.discount * (maxQ - self.getQValue(state, action)))
+    #         # self.qvals[(state, action)] = reward + maxQ - lmb * risk
+    #         return self.qvals[(state, action)]
+
+    def getQTable(self, num_states, num_actions):
+        qTable = []
+        for s in range(num_states):
+            values = []
+            for a in range(num_actions):
+                values.append(self.getQValue(s, a))
+            qTable.append(values)
+        return qTable
