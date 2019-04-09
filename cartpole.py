@@ -19,7 +19,7 @@ args_struct = namedtuple(
 
 args = args_struct(
     env_name='CartPole-v0',
-    number_steps=40000,
+    number_steps=135000,
     rthres=-1,
     influence=3,
     risk_default=0,
@@ -59,7 +59,7 @@ done = False
 agent.startEpisode()
 s_t = env.reset()
 s_t = tools.process_obs(s_t, name='buckets', params=process_params)
-danger_states = [0, 1, 2, 3, 4, 5, 66, 67, 68, 69, 71, 71]
+danger_states = [0, 1, 2, 3, 4, 5, 66, 67, 68, 69, 70, 71]
 
 alg = RmsAlg(args.rthres, args.influence, args.risk_default, args.sim_func_name)
 alg.add_to_v(s_t, tools.ind2coord(num_rows, s_t))
@@ -77,7 +77,7 @@ while True:
         break
 
     if done:
-        print(s_t)
+        print(s_t, history.get_steps_count())
         plotter.add_episode_to_experiment(0, iteration,
                                           [
                                               history.get_total_reward(),
