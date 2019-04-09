@@ -9,7 +9,7 @@ from tools import tools
 from tools.history import History
 from random import randint
 from collections import namedtuple
-from tools.qlearning import LambdaRiskQLearningAgent
+from tools.qlearning import LambdaRiskSARSAAgent
 from tools.line_plotter import LinesPlotter
 import matplotlib
 
@@ -19,7 +19,7 @@ args_struct = namedtuple(
 
 args = args_struct(
     env_name='CartPole-v0',
-    number_steps=135000,
+    number_steps=145000,
     rthres=-1,
     influence=3,
     risk_default=0,
@@ -45,7 +45,7 @@ process_params = {
     'buckets': args.buckets
 }
 
-agent = LambdaRiskQLearningAgent(**qLearnOpts)
+agent = LambdaRiskSARSAAgent(**qLearnOpts)
 agent.setEpsilon(0.1)
 
 num_rows = 6
@@ -118,7 +118,7 @@ while True:
     risk_penalty = abs(alg.get_risk(obs))
 
     next_action = agent.getAction(obs)
-    agent.observeTransition(s_t, action_idx, obs, r, lmb=1.0, risk=risk_penalty)
+    agent.observeSARSATransition(s_t, action_idx, r, obs, next_action)
 
     print('Output:' + ' ' + str(iteration) + ' ' + str(step) + ' ' + str(
         args.number_steps) + ' ' + str(step * 100 / args.number_steps) + ' ' + str(max_steps) + ' ' + str(avg_steps))

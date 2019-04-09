@@ -397,7 +397,7 @@ class LambdaRiskQLearningAgent(QLearningAgent):
 
 class LambdaRiskSARSAAgent(QLearningAgent):
 
-    def observeTransition(self, state, action, nextState, deltaReward, lmb=0, risk=0):
+    def observeSARSATransition(self, state, action, deltaReward, nextState, nextAction):
         """
             Called by environment to inform agent that a transition has
             been observed. This will result in a call to self.update
@@ -406,9 +406,9 @@ class LambdaRiskSARSAAgent(QLearningAgent):
             NOTE: Do *not* override or call this function
         """
         self.episodeRewards += deltaReward
-        self.update(state, action, nextState, deltaReward)
+        self.updateSARSA(state, action, deltaReward, nextState, nextAction)
 
-    def update(self, state, action, nextState, reward, lmb=0, risk=0):
+    def updateSARSA(self, state, action, reward, nextState, nextAction):
         """
           The parent class calls this to observe a
           state = action => nextState and reward transition.
@@ -416,9 +416,13 @@ class LambdaRiskSARSAAgent(QLearningAgent):
         """
         #   print ("updating Q learning", state, action, nextState, reward)
         maxQ = self.computeValueFromQValues(nextState)
-        self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
-                reward + self.discount * (maxQ - self.getQValue(state, action)))
+        # self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
+        #         reward + self.discount * (maxQ - self.getQValue(state, action)))
         # self.qvals[(state, action)] = reward + maxQ - lmb * risk
+        self.qvals[(state, action)] = self.getQValue(state, action) + self.alpha * (
+                reward + self.discount * (
+                    self.getQValue(nextState, nextAction) - self.getQValue(state, action)
+                    ))
         return self.qvals[(state, action)]
 
     def getQTable(self, num_states, num_actions):
